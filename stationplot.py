@@ -149,6 +149,10 @@ gray
 #a6cee3
 """.split()
 
+# https://docs.python.org/2/library/itertools.html#recipes
+def grouper(seq, n):
+    return zip(*[iter(seq)]*n)
+
 def curves(series, K):
     """`series` is a (data,begin,axis) tuple (axis is ignored).
     The output is a number of curves, each curves specified by (x,y)
@@ -774,13 +778,17 @@ def as_monthly_anomalies(data):
     return anomalies
 
 def as_annual_anomalies(data):
-    # Clear Climate Code
-    import extend_path
-    # Clear Climate Code
-    from code import series
+    monthlies = as_monthly_anomalies(data)
+    yearly_blocks = grouper(monthlies, 12)
 
-    _, data = series.monthly_annual(data)
-    return data
+    def mean12(data):
+        good_data = [x for x in data if x != BAD]
+        if not good_data:
+            return BAD
+        return sum(good_data) / float(len(good_data))
+
+    annual_anomalies = [mean12(block) for block in yearly_blocks]
+    return annual_anomalies
 
 def asdict(arg, inp, mode, axes, offset=None, scale=None):
     """`arg` should be a list of 11-digit station identifiers or
