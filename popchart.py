@@ -81,12 +81,21 @@ def reasonable_scale(x):
     return 10**len(s)
 
 def count(inp):
-    """*inp* is a file in v2.mean format.  Counts the number of rows in
-    each year.  The result is a dict that maps from year (a number) to
-    count (also a number)."""
+    """
+    *inp* is a file in GHCN-M format (either v2 or v3).
+    Counts the number of rows in each year.
+    
+    The result is a dict that maps from year (a number) to
+    count (also a number).
+    """
 
     def getyear(row):
-        return row[12:16]
+        if len(row) == 116:
+            # GHCN-M v3
+            return row[11:15]
+        else:
+            # GHCN-M v2
+            return row[12:16]
     res = dict((int(year),len(list(rows))) for year,rows in
       itertools.groupby(sorted(inp, key=getyear), getyear))
     return res
