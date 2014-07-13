@@ -741,13 +741,37 @@ def from_lines(lines, scale=None):
     return from_years(years)
 
 def as_monthly_anomalies(data):
-    # Clear Climate Code
-    import extend_path
-    # Clear Climate Code
-    from code import series
+    """
+    Convert `data`, which should be a sequence of monthly values,
+    to a sequence of monthly _anomalies_. This is done by
+    computing the mean value for each named calendar month, and
+    subtracting that from each correspoding monthly datum.
+    """
 
-    series.anomalize(data, None)
-    return data
+    import itertools
+
+    # One mean for each of 12 months.
+    climatology = []
+    for m in range(12):
+        monthly_data = [data[i] for i in range(m, len(data), 12)]
+        monthly_data = [datum for datum in monthly_data if datum != BAD]
+        if monthly_data:
+            mean = float(sum(monthly_data)) / len(monthly_data)
+        else:
+            mean = None
+        climatology.append(mean)
+
+    def sub1(datum, mean):
+        """
+        Subtract mean from datum, taking into account BAD data.
+        """
+        if datum == BAD:
+            return BAD
+        return datum - mean
+
+    anomalies = [sub1(datum, mean)
+      for datum, mean in zip(data, itertools.cycle(climatology))]
+    return anomalies
 
 def as_annual_anomalies(data):
     # Clear Climate Code
