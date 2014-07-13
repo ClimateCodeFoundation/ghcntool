@@ -16,5 +16,14 @@ standalone, or almost so.
 Many of the tools only work with the (now obsolete) GHCN v2, we
 would like them to work with GHCN-M v3.
 
-`stationplot.py` should work (unless you use the `-a` or `-y`
-option).
+# Tools that should work
+
+`popchart.py` draws a (google) chart that show number of rows of
+data in each year.
+
+`split_year.py` splits an GHCN-M dataset into those stations
+that still report in a particular year, and those that don't.
+
+`stationplot.py` (unless you use the `-y` option). It plots
+station records as an SVG file.
+
