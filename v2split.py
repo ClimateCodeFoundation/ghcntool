@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# $URL$
-# $Rev$
 #
 # v2split.py
 #

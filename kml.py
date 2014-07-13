@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# $URL$
-# $Rev$
 
 """
 Convert GHCN style data and metadata file to a KML file for browsing
