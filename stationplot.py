@@ -83,9 +83,6 @@ import math
 import os
 import sys
 
-# Clear Climate Code
-import extend_path
-
 # :todo: Should really import this from somewhere.  Although this BAD
 # value is entirely internal to this module.
 BAD = 9999
@@ -745,6 +742,23 @@ def from_lines(lines, scale=None):
         years.append((year, temps))
     return from_years(years)
 
+def as_monthly_anomalies(data):
+    # Clear Climate Code
+    import extend_path
+    # Clear Climate Code
+    from code import series
+
+    series.anomalize(data, None)
+    return data
+
+def as_annual_anomalies(data):
+    # Clear Climate Code
+    import extend_path
+    # Clear Climate Code
+    from code import series
+
+    _, data = series.monthly_annual(data)
+    return data
 
 def asdict(arg, inp, mode, axes, offset=None, scale=None):
     """`arg` should be a list of 11-digit station identifiers or
@@ -763,8 +777,6 @@ def asdict(arg, inp, mode, axes, offset=None, scale=None):
 
     # Clear Climate Code, tool directory
     import ghcnm_index
-    # Clear Climate Code
-    from code import series
 
     v2 = ghcnm_index.File(inp)
 
@@ -775,9 +787,9 @@ def asdict(arg, inp, mode, axes, offset=None, scale=None):
         for id12,rows in v2.get(id):
             data,begin = from_lines(rows, scale)
             if mode == 'anom':
-                series.anomalize(data, None)
+                data = as_monthly_anomalies(data)
             if mode == 'annual':
-                _, data = series.monthly_annual(data)
+                data = as_annual_anomalies(data)
             data = apply_data_offset(data, off)
             table[id12] = (data,begin,axis)
 
