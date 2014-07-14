@@ -204,11 +204,15 @@ def get_titles(title, datadict, meta):
 
 def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
   offset=None, scale=None, caption=None, title=None, axes=None):
-    """Read data from `inp` and create a plot of the stations specified
+    """
+    Read data from `inp` and create a plot of the stations specified
     in the list `arg`.  Plot is written to `out`.  Metadata (station
-    name, location) is taken from the `meta` file (usually v2.inv).
+    name, location) is taken from the `meta` file.
+
     `mode` should be 'temp' to plot temperatures, or 'anom' to plot
-    monthly anomalies.  `timewindow` restricts the plot to a particular
+    monthly anomalies.
+    
+    `timewindow` restricts the plot to a particular
     range of times: None means that the entire time range is plotted;
     otherwise, it should be a pair of numbers (y1,y2) and only records
     that have a time t where y1 <= t < y2 are displayed.  Normally y1
