@@ -283,11 +283,20 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
     lborder = 125
     rborder = 65
 
-    out.write("""<svg width='%dpx' height='%dpx'
+    if title:
+        # It's extremely difficult to find out the width of
+        # of this piece of text when it's rendered to SVG.
+        # So we make a reasonable estimate here.
+        titlewidth = len(title) * config.titlesize * 0.70
+    else:
+        titlewidth = 0
+    content_width = max(plotwidth, titlewidth)
+
+    out.write("""<svg width='%.0fpx' height='%.0fpx'
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
       version="1.1">\n""" %
-      (plotwidth+lborder+rborder, plotheight+100+legendh+captionh))
+      (content_width+lborder+rborder, plotheight+100+legendh+captionh))
 
     # Style
     out.write("""<defs>
