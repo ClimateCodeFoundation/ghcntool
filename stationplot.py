@@ -186,6 +186,22 @@ def curves(series, K):
             continue
         yield list(block)
 
+def get_titles(title, datadict, meta):
+    if title:
+        return title
+    if not meta:
+        return ''
+
+    meta = get_meta(datadict, meta)
+
+    a = []
+    for id11,d in meta.items():
+        a.append('%s %+06.2f%+07.2f  %s' %
+          (id11, d['lat'], d['lon'], d['name']))
+    # Note, the '\n' is an attempt to get SVG to use more than one
+    # "line".  But it doesn't work.  So... :todo: fix that then.
+    return '\n'.join(a)
+
 def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
   offset=None, scale=None, caption=None, title=None, axes=None):
     """Read data from `inp` and create a plot of the stations specified
@@ -212,18 +228,7 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
     if not datadict:
         raise Error('No data found for %s' % (', '.join(arg)))
         
-    if meta:
-        meta = get_meta(datadict, meta)
-        if title is None:
-            title = []
-            for id11,d in meta.items():
-                title.append('%s %+06.2f%+07.2f  %s' %
-                  (id11, d['lat'], d['lon'], d['name']))
-            # Note, the '\n' is an attempt to get SVG to use more than one
-            # "line".  But it doesn't work.  So... :todo: fix that then.
-            title = '\n'.join(title)
-    if title is None:
-        title = ''
+    title = get_titles(title, datadict, meta)
 
     # Assign number of data items per year.
     global K # :todo: made not global.
