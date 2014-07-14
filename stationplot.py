@@ -801,7 +801,7 @@ def as_annual_anomalies(data):
 
     def mean12(data):
         good_data = [x for x in data if x != BAD]
-        if not good_data:
+        if len(good_data) < 6:
             return BAD
         return sum(good_data) / float(len(good_data))
 
