@@ -47,9 +47,10 @@ associated station records, none of them will be coloured according to
 the --colour option).
 
 Anomalies can be plotted (each datum has the mean for that month
-subtracted from it) by using the -a option.  The -y option will compute
-monthly anomalies and then average them in blocks of 12 to form yearly
-(annual) anomalies.
+subtracted from it) by using the -a option.  The -y option (yearly)
+computes annual anomalies by average all the anomalies for a year
+(a year requires at least 6 valid monthly anomalies to form a valid
+average).
 
 Series can be offset vertically using the --offset option.  The argument
 should be a comma separated list of offsets, each offset will be applied
