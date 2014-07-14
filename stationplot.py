@@ -609,11 +609,20 @@ def get_meta(l, meta):
     full = {}
     for line in meta:
         id = line[:11]
-        full[id] = dict(
-            name = line[12:42].strip(),
-            lat = float(line[43:49]),
-            lon = float(line[50:57]),
-        )
+        if len(line) == 108:
+            # GHCN-M v3
+            full[id] = dict(
+                name=line[38:70].strip(),
+                lat=float(line[12:20]),
+                lon=float(line[21:30]),
+            )
+        else:
+            # GHCN-M v2
+            full[id] = dict(
+                name = line[12:42].strip(),
+                lat = float(line[43:49]),
+                lon = float(line[50:57]),
+            )
     d = {}
     l = set(map(lambda x: x[:11], l))
     for id11 in l:
@@ -897,6 +906,29 @@ def parse_topt(v):
 
     return map(int, v.split(','))
 
+def open_metafile(metafile, inp):
+    if metafile:
+        # Name of metafile supplied. Open it.
+        return open(metafile)
+
+    # A series of defaults to try...
+    names = ['input/v3.inv', 'input/v2.inv']
+    try:
+        inp.name
+    except AttributeError:
+        pass
+    else:
+        # ... including a default based on the name of the input.
+        if inp.name.endswith('.dat'):
+            metaname = inp.name[:-4] + '.inv'
+            names = [metaname] + names
+    for name in names:
+        try:
+            metafile = open(name)
+            return metafile
+        except IOError:
+            pass
+
 class Usage(Exception):
     pass
         
@@ -954,15 +986,8 @@ def main(argv=None):
             infile = sys.stdin
         else:
             infile = open(infile)
-        if metafile is None:
-            # The default is 'input/v2.inv' but we don't complain if we
-            # can't open it.
-            try:
-                metafile = open('input/v2.inv')
-            except IOError:
-                pass
-        else:
-            metafile = open(metafile)
+        metafile = open_metafile(metafile, infile)
+
         derive_config(config)
         return plot(arg, inp=infile, out=outfile, meta=metafile, **key)
     except (getopt.GetoptError, Usage), e:
