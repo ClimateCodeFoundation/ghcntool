@@ -500,10 +500,27 @@ def render_caption(out, y, caption):
 def render_vaxis(out, axis, mode, bottom, top, plotwidth):
     """Either the 'y' (on left) or the 'r' axis (on right)."""
 
+    # In this function, (0,0) is the bottom left of the chart,
+    # and +ve y is downwards (same as initial SVG system). We
+    # are 1 to 1 with SVG pixels.
+
+    # Mostly this function uses positive values for y
+    # coordinates above the bottom of the chart; they are
+    # negated immediately before writing the SVG.
+
     if 'y' == axis:
         anchor = 'end'
+        # x coordinate of the axis to be drawn.
+        xcoord = 0
+        # *tickvec* is negative (to the left) for the y-axis.
+        tickvec = -8
     else:
         anchor = 'start'
+        xcoord = plotwidth
+        # *tickvec* is positive (to the right) for the r-axis
+        # (which is drawn on the right of the chart).
+        tickvec = 8
+
     with Tag(out, 'g', attr={'text-anchor':anchor}):
         vscale = getattr(config, axis+'scale')
         tick = getattr(config, axis+'tick')
@@ -516,45 +533,39 @@ def render_vaxis(out, axis, mode, bottom, top, plotwidth):
         # Works best when *every* is an integer.
         assert int(every) == every
         every = int(every)
-        # *s* the offset, in pixels, of the lowest tick from the bottom of
-        # the chart.
+        # *s* the offset, in pixels, of the lowest tick from the
+        # bottom of the chart.
         s = (-bottom[axis]) % every
         # Works best when *s* is an integer.
         assert int(s) == s
         s = int(s)
         slimit = height+1
+        print(dict(top=top[axis], bottom=bottom[axis],
+          every=every, s=s, slimit=slimit))
         # If the top is nearly at a tick mark, force an extra tick mark.
         if (slimit % every) > .8*every:
             slimit += every
         tickat = range(s, int(slimit), every)
-        # *tickvec* is negative (to the left) for the y-axis, positive (to
-        # the right) for the r-axis.
-        tickvec = dict(y=-8,r=+8)[axis]
-        # x coordinate of the axis to be drawn.
-        if axis == 'y':
-            xcoord = 0
-        elif axis == 'r':
-            xcoord = plotwidth
         # The actual tick marks.
         out.write("  <path d='" +
-          ''.join(['M%.1f %.1fl%d 0' % (xcoord, -y, tickvec) for y in tickat]) +
+          ''.join(['M%.1f %.1fl%d 0' % (xcoord, -y, tickvec)
+            for y in tickat]) +
           "' />\n")
 
         # The labels for the ticks.
-        # *prec* gives the number of figures after the decimal point for the
-        # y-axis tick label.
+        # *prec* gives the number of figures after the decimal point
+        # for the y-axis tick label.
         prec = -int(round(math.log10(tick) - 0.001))
         prec = max(0, prec)
         tickfmt = '%%.%df' % prec
-        # A y offset used to correct for a bug when InkScape renders to PDF
-        # (alignment-baseline is ignored, and the labels are half a line too
-        # high).
+        # Correct for a bug when InkScape renders to PDF.
+        # (alignment-baseline is ignored, and the labels are a
+        # half-line too high).
         if config.buginkscapepdf:
             yoffset = config.fontsize * 0.3
         else:
             yoffset = 0
         for y in tickat:
-            # Note: "%.0f' % 4.999 == '5'
             out.write(("  <text alignment-baseline='middle'"
               " x='%.1f' y='%.1f'>" + tickfmt + "</text>\n") %
               (xcoord+tickvec, -y+yoffset, (y+bottom[axis])/float(vscale)))
