@@ -540,10 +540,15 @@ def render_vaxis(out, axis, mode, bottom, top, plotwidth):
         assert int(s) == s
         s = int(s)
         slimit = height+1
-        print(dict(top=top[axis], bottom=bottom[axis],
-          every=every, s=s, slimit=slimit))
+        if (slimit - s) // every == 0:
+            # Only one tick mark, make it easier to get another one.
+            nearly = 0.6
+        else:
+            nearly = 0.8
+        if 0: print(dict(top=top[axis], bottom=bottom[axis],
+          every=every, s=s, slimit=slimit, nearly=nearly))
         # If the top is nearly at a tick mark, force an extra tick mark.
-        if (slimit % every) > .8*every:
+        if (slimit % every) > nearly * every:
             slimit += every
         tickat = range(s, int(slimit), every)
         # The actual tick marks.
