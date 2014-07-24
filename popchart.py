@@ -59,6 +59,7 @@ def popchart(inps, out):
       chds="1,%d" % yscale,
       chbh='a,0,2',
       chco='6611cc',
+      chdlp='t',
       chxr='0,%d,%d,10|1,0,%d' % (minyear,maxyear,yscale),
     )
 
