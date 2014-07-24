@@ -10,8 +10,12 @@
 # "Hemispheric and Large-Scale Surface Air Temperature Variations: An
 # Extensive Revision and an Update to 2001"; Journal of Climate; 2003.
 
-"""Tool to draw a googlechart of year versus number of data in that
-year.  See Jones and Moberg 2003 Figure 1 for an example."""
+"""
+popchart.py [file ...]
+
+Tool to draw a googlechart of year versus number of data in that
+year.  See Jones and Moberg 2003 Figure 1 for an example.
+"""
 
 import itertools
 import urllib
