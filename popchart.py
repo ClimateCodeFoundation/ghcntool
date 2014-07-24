@@ -23,8 +23,10 @@ import urllib
 prefix = 'http://chart.apis.google.com/chart'
 
 def popchart(inps, out):
-    """Output googlechart URL on *out*. *inps* is a list of files in
-    v2.mean format."""
+    """
+    Output googlechart URL on *out*. *inps* is a list of files in
+    v2.mean format.
+    """
 
     # There is one "count" dict for each input, the dict maps from year
     # to count of rows for that year.
@@ -34,8 +36,8 @@ def popchart(inps, out):
     most = max(max(c.values()) for c in counts)
     yscale = reasonable_scale(most)
 
-    # Convert the counts to simple sequences (each sequence starting with
-    # *minyear*.
+    # Convert the counts to simple sequences (each sequence starting
+    # with *minyear*.
     seqs = [[c.get(y, 0) for y in range(minyear,maxyear+1)]
       for c in counts]
 
@@ -67,7 +69,8 @@ def popchart(inps, out):
     out.write(url+'\n')
 
 def reasonable_scale(x):
-    """Calculate a limit (for the scale of the y-axis).  The result
+    """
+    Calculate a limit (for the scale of the y-axis).  The result
     is either 1, 2, or 5 times some power of ten.  And is the smallest
     such number that is >= x.
     """
