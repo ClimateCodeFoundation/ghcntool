@@ -11,10 +11,12 @@
 # Extensive Revision and an Update to 2001"; Journal of Climate; 2003.
 
 """
-popchart.py [file ...]
+popchart.py [ghcn.dat ...]
 
 Tool to draw a googlechart of year versus number of data in that
 year.  See Jones and Moberg 2003 Figure 1 for an example.
+
+The inputs are files in GHCN-M v3 format.
 """
 
 import itertools
@@ -25,7 +27,7 @@ prefix = 'http://chart.apis.google.com/chart'
 def popchart(inps, out):
     """
     Output googlechart URL on *out*. *inps* is a list of files in
-    v2.mean format.
+    GHCN-M v3 format (or v2 format).
     """
 
     # There is one "count" dict for each input, the dict maps from year
