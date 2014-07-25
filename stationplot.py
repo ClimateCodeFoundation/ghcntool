@@ -107,6 +107,8 @@ config.rscale = 200
 config.ytick = 5
 # Ticks on R axis.
 config.rtick = 0.01
+# Label on Y axis (None means it is magic).
+config.ylabel = None
 # Style of legend.  'pianola' or 'none'.
 config.legend = 'pianola'
 # Workaround a bug in InkScape when it renders the SVG to PDF.
@@ -581,13 +583,16 @@ def render_vaxis(out, axis, mode, bottom, top, plotwidth):
               "  <defs><path id='pvlabel' d='M-%d %.1fl0 -800'/></defs>\n" %
               (3.5*config.fontsize-8, -height*0.5+400))
             # :todo: make label configurable.
-            if 'temp' in mode:
-                value = 'Temperature'
+            if config.ylabel is None:
+                label = 'Anomaly'
+                if 'temp' in mode:
+                    label = 'Temperature'
+                label += " (\N{DEGREE SIGN}C)"
             else:
-                value = 'Anomaly'
+                label = config.ylabel
             out.write("  <text text-anchor='middle'>"
               "<textPath xlink:href='#pvlabel' startOffset='50%%'>"
-              u"%s (\N{DEGREE SIGN}C)</textPath></text>\n" % value)
+              u"%s</textPath></text>\n" % label)
 
 def cssidescape(identifier):
     """Escape an identifier so that it is suitable for use as a CSS
