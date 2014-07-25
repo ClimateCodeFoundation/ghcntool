@@ -96,7 +96,7 @@ def to_geojson(inp, out):
       "type": "FeatureCollection",
       "features": features
     }
-    json.dump(geojson, out)
+    json.dump(geojson, out, indent=2)
 
 def main(argv=None):
     import glob
