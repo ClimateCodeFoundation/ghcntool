@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Make GeoJSON from GHCN-M v3 .inv file.
+# See http://geojson.org/geojson-spec.html
+
+inp=${1-$(printf '%s\n' ~/zontem/input/ghcnm*/*.inv | tail -q)}
+
+cat $inp |
+  cut -c -30 | while read id lat lon
+do
+  printf '{"type":"Feature", "geometry":{"type":"Point","coordinates": [%s, %s] },"properties": {"id": "%s"}}\n' $lon $lat $id
+done | {
+  cat <<EOF
+{ "type":"FeatureCollection",
+  "features": [
+EOF
+  sed '$!s/$/,/'
+  printf "]\n}\n"
+  }
