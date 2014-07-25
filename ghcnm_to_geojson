@@ -1,19 +1,113 @@
-#!/bin/sh
+#!/usr/bin/env python3
 
 # Make GeoJSON from GHCN-M v3 .inv file.
 # See http://geojson.org/geojson-spec.html
 
-inp=${1-$(printf '%s\n' ~/zontem/input/ghcnm*/*.inv | tail -q)}
+import json
+import os
+import sys
 
-cat $inp |
-  cut -c -30 | while read id lat lon
-do
-  printf '{"type":"Feature", "geometry":{"type":"Point","coordinates": [%s, %s] },"properties": {"id": "%s"}}\n' $lon $lat $id
-done | {
-  cat <<EOF
-{ "type":"FeatureCollection",
-  "features": [
-EOF
-  sed '$!s/$/,/'
-  printf "]\n}\n"
-  }
+# Copied from zontem.
+def station_metadata(path=None, file=None, format='v3'):
+    """
+    Read a collection of station metadata from file, return
+    it as a dictionary of dictionaries. The returned
+    dictionary is keyed by the 11-digit identifier (as a
+    string) to give the metadata for that particular
+    station.
+
+    *format* specifies the format of the metadata; it can only be
+    'v3' (for GHCN-M v3). It exists to provide compatibility
+    with an alternate implementation of the same interface.
+    """
+
+    # Do not supply both arguments!
+    assert not (file and path)
+
+    if path:
+        file = open(path)
+    assert file
+
+    assert 'v3' == format
+
+    # With the beta GHCN-M v3 metadata, several fields are blank for
+    # some stations.  When processed as ints, these will get
+    # converted to None.
+    def blank_int(s):
+        """
+        Convert a field to an int, or if blank, convert to None.
+        """
+
+        if s.isspace():
+            return None
+        return int(s)
+
+    # Fields are named after the designators used in the GHCN-M v3
+    # documentation.
+
+    # See ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/v3/README for format
+    # of GHCN's metadata file.
+    v3_ghcn_fields = dict(
+        id        = (0,    11, str),
+        latitude  = (12,   20, float),
+        longitude = (21,   30, float),
+        stelev    = (31,   37, float),
+        name      = (38,   68, str),
+        grelev    = (69,   73, blank_int),
+        popcls    = (73,   74, str),
+        popsiz    = (75,   79, blank_int),
+        topo      = (79,   81, str),
+        stveg     = (81,   83, str),
+        stloc     = (83,   85, str),
+        ocndis    = (85,   87, blank_int),
+        airstn    = (87,   88, str),
+        towndis   = (88,   90, blank_int),
+        grveg     = (90,  106, str),
+        popcss    = (106, 107, str),
+    )
+
+    fields = v3_ghcn_fields
+
+    result = {}
+    for line in file:
+        d = dict((field, convert(line[a:b]))
+                  for field, (a,b,convert) in fields.items())
+        result[d['id']] = d
+
+    return result
+
+def to_geojson(inp, out):
+    stations = station_metadata(file=inp)
+    features = []
+    for station in stations.values():
+        # Python object for GeoJSON Feature
+        # http://geojson.org/geojson-spec.html#feature-objects
+        Feature = {"type":"Feature"}
+        Feature['id'] = station['id']
+        Feature['properties'] = station
+        coords = [station['longitude'], station['latitude'], station['stelev']]
+        Feature['geometry'] = dict(type="Point", coordinates=coords)
+        features.append(Feature)
+    geojson = {
+      "type": "FeatureCollection",
+      "features": features
+    }
+    json.dump(geojson, out)
+
+def main(argv=None):
+    import glob
+
+    if argv is None:
+        argv = sys.argv
+    arg = argv[1:]
+    if arg:
+        inv = arg[0]
+    else:
+        pattern = os.path.expanduser("~/zontem/input/ghcnm*/*.inv")
+        invs = glob.glob(pattern)
+        inv = sorted(invs)[-1]
+    with open(inv) as inp:
+        to_geojson(inp, sys.stdout)
+
+if __name__ == '__main__':
+    main()
