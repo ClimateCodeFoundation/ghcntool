@@ -587,7 +587,7 @@ def render_vaxis(out, axis, mode, bottom, top, plotwidth):
                 label = 'Anomaly'
                 if 'temp' in mode:
                     label = 'Temperature'
-                label += " (\N{DEGREE SIGN}C)"
+                label += u" (\N{DEGREE SIGN}C)"
             else:
                 label = config.ylabel
             out.write("  <text text-anchor='middle'>"
