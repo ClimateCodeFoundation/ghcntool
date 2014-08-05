@@ -228,8 +228,6 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
     def valid(datum):
         return datum != BAD
 
-    if not axes:
-        axes = 'y' * len(arg)
     datadict = asdict(arg, inp, mode, axes=axes, offset=offset, scale=scale)
     if not datadict:
         raise Error('No data found for %s' % (', '.join(arg)))
@@ -625,7 +623,8 @@ def window(datadict, timewindow):
     assert int(t1) == t1
     assert int(t2) == t2
     d = {}
-    for id12,(data,begin) in datadict.items():
+    for id12, tup in datadict.items():
+        (data, begin) = tup[:2]
         if t2 <= begin:
             continue
         end = begin+len(data)//12
@@ -636,7 +635,7 @@ def window(datadict, timewindow):
         if begin < t1:
             data = data[12*(t1-begin):]
             begin = t1
-        d[id12] = (data,begin)
+        d[id12] = (data, begin) + tup[2:]
     return d
 
 def get_meta(l, meta):
@@ -841,12 +840,18 @@ def as_annual_anomalies(data):
 
 def asdict(arg, inp, mode, axes, offset=None, scale=None):
     """`arg` should be a list of 11-digit station identifiers or
-    12-digit record identifiers.  The records from `inp` are extracted
-    and returned as a dictionary (that maps identifiers to (data,begin)
-    pair).  If `mode` is 'anom' then data are converted to monthly
+    12-digit record identifiers.
+    
+    The records from `inp` are extracted
+    and returned as a dictionary that maps identifiers to
+    (data,begin,axis) tuple.
+    
+    If `mode` is 'anom' then data are converted to monthly
     anomalies; if `mode` is 'annual' then data are converted to annual
     anomalies (using the GISTEMP algorithm that copes with missing
-    months).  *offset* can be used to offset each station.  The first
+    months).
+    
+    *offset* can be used to offset each station.  The first
     station in the *arg* list will have no offset, each subsequent
     station will have its data biased by adding *offset* (the offset
     increasing arithmetically for each station).  All of the duplicates
@@ -862,6 +867,9 @@ def asdict(arg, inp, mode, axes, offset=None, scale=None):
     table = {}
     if not offset:
         offset = [0.0] * len(arg)
+    if not axes:
+        axes = 'y' * len(arg)
+
     for id,axis,off in zip(arg, axes, offset):
         for id12,rows in v2.get(id):
             data,begin = from_lines(rows, scale)
