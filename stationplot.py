@@ -250,7 +250,7 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
     axismin = dict(r=9999, y=9999)
     if timewindow:
         # :todo: make work with mode=annual
-        datadict = window(datadict, timewindow)
+        datadict = window(datadict, timewindow, K)
     for _,(data,begin,axis) in datadict.items():
         minyear = min(minyear, begin)
         limyear = max(limyear, begin + (len(data)//K))
@@ -612,7 +612,7 @@ def cssidescape(identifier):
         x0 = '\\' + x0
     return x0 + x
 
-def window(datadict, timewindow):
+def window(datadict, timewindow, K):
     """Restrict the data series in *datadict* to be between the two
     times specified in the timewindow pair.  A fresh dict is returned.
     """
@@ -627,13 +627,13 @@ def window(datadict, timewindow):
         (data, begin) = tup[:2]
         if t2 <= begin:
             continue
-        end = begin+len(data)//12
+        end = begin+len(data)//K
         if end <= t1:
             continue
         if t2 < end:
-            data = data[:12*(t2-end)]
+            data = data[:K*(t2-end)]
         if begin < t1:
-            data = data[12*(t1-begin):]
+            data = data[K*(t1-begin):]
             begin = t1
         d[id12] = (data, begin) + tup[2:]
     return d
