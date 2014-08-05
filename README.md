@@ -1,7 +1,7 @@
 # GHCN Tool
 
 A collection of tools to work with data from Global Historical
-Climate Network (GHCN).
+Climatology Network (GHCN).
 
 # Status
 
