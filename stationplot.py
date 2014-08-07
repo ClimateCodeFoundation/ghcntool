@@ -204,6 +204,56 @@ def get_titles(title, datadict, meta):
     # "line".  But it doesn't work.  So... :todo: fix that then.
     return '\n'.join(a)
 
+def treat_mode(datadict, mode):
+    """
+    *datadict* is a dict, as returned by select_records.
+
+    If `mode` is 'anom' then data are converted to monthly
+    anomalies; if `mode` is 'annual' then data are converted to annual
+    anomalies (using the GISTEMP algorithm that copes with missing
+    months). Otherwise the data are not converted.
+
+    A fresh dict is returned.
+    """
+
+    if mode not in ('anom', 'annual'):
+        return dict(datadict)
+
+    result = {}
+    for id, tupl in datadict.iteritems():
+        data = tupl[0]
+        if mode == 'anom':
+            data = as_monthly_anomalies(data)
+        if mode == 'annual':
+            data = as_annual_anomalies(data)
+        result[id] = (data,) + tupl[1:]
+    return result
+
+def treat_offset(datadict, ids, offset):
+    """
+    *offset* can be used to offset each station.
+
+    if `offset` is None then there is no effect and a fresh dict
+    is returned with unmodified data.
+
+    Otherwise, each station in `ids` has its data biased by adding
+    *offset*.
+
+    The visual effect is to displace stations upward (if the offset
+    is positive).
+    """
+
+    result = dict(datadict)
+    
+    if not offset:
+        return result
+
+    for id,off in zip(ids, offset):
+        data = datadict[id][0]
+        data = apply_data_offset(data, off)
+        result[id] = (data,) + datadict[id][1:]
+    return result
+
 def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
   offset=None, scale=None, caption=None, title=None, axes=None):
     """
@@ -228,12 +278,17 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
     def valid(datum):
         return datum != BAD
 
-    datadict = select_records(arg, inp, mode,
-      axes=axes, offset=offset, scale=scale)
+    datadict = select_records(arg, inp,
+      axes=axes, scale=scale)
+
     if not datadict:
         raise Error('No data found for %s' % (', '.join(arg)))
-        
+
     title = get_titles(title, datadict, meta)
+
+    datadict = treat_mode(datadict, mode)
+
+    datadict = treat_offset(datadict, arg, offset)
 
     # Assign number of data items per year.
     global K # :todo: made not global.
@@ -839,46 +894,27 @@ def as_annual_anomalies(data):
     annual_anomalies = [mean12(block) for block in yearly_blocks]
     return annual_anomalies
 
-def select_records(ids, inp, mode, axes, offset=None, scale=None):
+def select_records(ids, inp, axes, scale=None):
     """`ids` should be a list of 11-digit station identifiers or
     12-digit record identifiers.
     
     The records from `inp` are extracted
     and returned as a dictionary that maps identifiers to
     (data,begin,axis) tuple.
-    
-    If `mode` is 'anom' then data are converted to monthly
-    anomalies; if `mode` is 'annual' then data are converted to annual
-    anomalies (using the GISTEMP algorithm that copes with missing
-    months).
-    
-    *offset* can be used to offset each station.  The first
-    station in the *ids* list will have no offset, each subsequent
-    station will have its data biased by adding *offset* (the offset
-    increasing arithmetically for each station).  All of the duplicates
-    for a given station will be offset by the same amount.  The visual
-    effect is to displace stations upward (if the offset is positive).
     """
 
     # Clear Climate Code, tool directory
     import ghcnm_index
 
-    data = ghcnm_index.File(inp)
+    records = ghcnm_index.File(inp)
 
     table = {}
-    if not offset:
-        offset = [0.0] * len(ids)
     if not axes:
         axes = 'y' * len(ids)
 
-    for id,axis,off in zip(ids, axes, offset):
-        for id12,rows in data.get(id):
+    for id,axis in zip(ids, axes):
+        for id12,rows in records.get(id):
             data,begin = from_lines(rows, scale)
-            if mode == 'anom':
-                data = as_monthly_anomalies(data)
-            if mode == 'annual':
-                data = as_annual_anomalies(data)
-            data = apply_data_offset(data, off)
             table[id12] = (data,begin,axis)
 
     return table
