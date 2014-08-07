@@ -862,7 +862,7 @@ def asdict(arg, inp, mode, axes, offset=None, scale=None):
     # Clear Climate Code, tool directory
     import ghcnm_index
 
-    v2 = ghcnm_index.File(inp)
+    data = ghcnm_index.File(inp)
 
     table = {}
     if not offset:
@@ -871,7 +871,7 @@ def asdict(arg, inp, mode, axes, offset=None, scale=None):
         axes = 'y' * len(arg)
 
     for id,axis,off in zip(arg, axes, offset):
-        for id12,rows in v2.get(id):
+        for id12,rows in data.get(id):
             data,begin = from_lines(rows, scale)
             if mode == 'anom':
                 data = as_monthly_anomalies(data)
