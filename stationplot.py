@@ -138,7 +138,7 @@ orange
 olive
 navy
 aqua
-fuchsia
+#745C12
 gray
 #1f77b4
 #33a02c
