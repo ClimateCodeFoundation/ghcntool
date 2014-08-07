@@ -670,7 +670,7 @@ def cssidescape(identifier):
 
 def window(datadict, timewindow, K):
     """Restrict the data series in *datadict* to be between the two
-    times specified in the timewindow pair.  A fresh dict is returned.
+    times specified in the `timewindow` pair.  A fresh dict is returned.
     """
 
     t1,t2 = timewindow
