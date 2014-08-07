@@ -228,7 +228,8 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
     def valid(datum):
         return datum != BAD
 
-    datadict = asdict(arg, inp, mode, axes=axes, offset=offset, scale=scale)
+    datadict = select_records(arg, inp, mode,
+      axes=axes, offset=offset, scale=scale)
     if not datadict:
         raise Error('No data found for %s' % (', '.join(arg)))
         
@@ -838,8 +839,8 @@ def as_annual_anomalies(data):
     annual_anomalies = [mean12(block) for block in yearly_blocks]
     return annual_anomalies
 
-def asdict(arg, inp, mode, axes, offset=None, scale=None):
-    """`arg` should be a list of 11-digit station identifiers or
+def select_records(ids, inp, mode, axes, offset=None, scale=None):
+    """`ids` should be a list of 11-digit station identifiers or
     12-digit record identifiers.
     
     The records from `inp` are extracted
@@ -852,7 +853,7 @@ def asdict(arg, inp, mode, axes, offset=None, scale=None):
     months).
     
     *offset* can be used to offset each station.  The first
-    station in the *arg* list will have no offset, each subsequent
+    station in the *ids* list will have no offset, each subsequent
     station will have its data biased by adding *offset* (the offset
     increasing arithmetically for each station).  All of the duplicates
     for a given station will be offset by the same amount.  The visual
@@ -866,11 +867,11 @@ def asdict(arg, inp, mode, axes, offset=None, scale=None):
 
     table = {}
     if not offset:
-        offset = [0.0] * len(arg)
+        offset = [0.0] * len(ids)
     if not axes:
-        axes = 'y' * len(arg)
+        axes = 'y' * len(ids)
 
-    for id,axis,off in zip(arg, axes, offset):
+    for id,axis,off in zip(ids, axes, offset):
         for id12,rows in data.get(id):
             data,begin = from_lines(rows, scale)
             if mode == 'anom':
