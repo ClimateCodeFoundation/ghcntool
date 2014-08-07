@@ -286,6 +286,8 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
 
     title = get_titles(title, datadict, meta)
 
+    datadict = window(datadict, timewindow)
+
     datadict = treat_mode(datadict, mode)
 
     datadict = treat_offset(datadict, arg, offset)
@@ -304,9 +306,6 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
     # vertical axes.
     axismax = dict(r=-9999, y=-9999)
     axismin = dict(r=9999, y=9999)
-    if timewindow:
-        # :todo: make work with mode=annual
-        datadict = window(datadict, timewindow, K)
     for _,(data,begin,axis) in datadict.items():
         minyear = min(minyear, begin)
         limyear = max(limyear, begin + (len(data)//K))
@@ -668,10 +667,16 @@ def cssidescape(identifier):
         x0 = '\\' + x0
     return x0 + x
 
-def window(datadict, timewindow, K):
+def window(datadict, timewindow):
     """Restrict the data series in *datadict* to be between the two
     times specified in the `timewindow` pair.  A fresh dict is returned.
     """
+
+    if timewindow is None:
+        return dict(datadict)
+
+    # Number of data items per year.
+    K = 12
 
     t1,t2 = timewindow
     # The window must be on a year boundary to preserve the fact that
