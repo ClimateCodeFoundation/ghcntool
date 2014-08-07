@@ -210,8 +210,9 @@ def treat_mode(datadict, mode):
 
     If `mode` is 'anom' then data are converted to monthly
     anomalies; if `mode` is 'annual' then data are converted to annual
-    anomalies (using the GISTEMP algorithm that copes with missing
-    months). Otherwise the data are not converted.
+    anomalies (a simple average of monthly anomalies is used, as
+    long as there are 6 valid months).  Otherwise the data are not
+    converted.
 
     A fresh dict is returned.
     """
