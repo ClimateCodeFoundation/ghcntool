@@ -18,11 +18,11 @@
 Usage: python stationplot.py [options] station-id
 
 The options are:
-  [-a] [-y]
   [-c config]
   [--colour blue,black,...]
   [-d input/ghcnm.tavg.qca.dat]
   [--caption figure1]
+  [--mode anom] [-a] [-y]
   [-o file.svg]
   [--offset 0,+0.2]
   [-t YYYY,YYYY]
@@ -46,11 +46,13 @@ record (in other words, if an 11 digit ID is used and there are several
 associated station records, none of them will be coloured according to
 the --colour option).
 
-Anomalies can be plotted (each datum has the mean for that month
-subtracted from it) by using the -a option.  The -y option (yearly)
-computes annual anomalies by average all the anomalies for a year
-(a year requires at least 6 valid monthly anomalies to form a valid
-average).
+--mode controls whether temperatures or anomalies are plotted, and
+controls monthly or annual resolution.  --mode requires an argument
+which should be: 'anom' for monthly anomalies; 'annanom' for annual
+anomalies (average of monthly anomalies; 6 required); 'annual' for
+annual temperatures (annual anomalies with average climatology added
+back). '-a' is obsolete shorthand for '--mode anom'; '-y' is obsolete
+shorthand for '--mode annanom'.
 
 Series can be offset vertically using the --offset option.  The argument
 should be a comma separated list of offsets, each offset will be applied
@@ -209,24 +211,31 @@ def treat_mode(datadict, mode):
     *datadict* is a dict, as returned by select_records.
 
     If `mode` is 'anom' then data are converted to monthly
-    anomalies; if `mode` is 'annual' then data are converted to annual
+    anomalies; if `mode` is 'annanom' then data are converted to annual
     anomalies (a simple average of monthly anomalies is used, as
-    long as there are 6 valid months).  Otherwise the data are not
-    converted.
+    long as there are 6 valid months); if `mode` is 'annual'
+    then data are converted to annual temperatures by first
+    computing annual anomalies and then adding the average
+    annual temperature (the average of the 12 monthly
+    temperatures).
+    
+    Otherwise the data are not converted.
 
     A fresh dict is returned.
     """
 
-    if mode not in ('anom', 'annual'):
+    if mode not in ('anom', 'annual', 'annanom'):
         return dict(datadict)
 
     result = {}
     for id, tupl in datadict.iteritems():
         data = tupl[0]
         if mode == 'anom':
-            data = as_monthly_anomalies(data)
+            data, _ = as_monthly_anomalies(data)
+        if mode == 'annanom':
+            data, _ = as_annual_anomalies(data)
         if mode == 'annual':
-            data = as_annual_anomalies(data)
+            data = as_annual_temps(data)
         result[id] = (data,) + tupl[1:]
     return result
 
@@ -295,7 +304,7 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
 
     # Assign number of data items per year.
     global K # :todo: made not global.
-    if 'annual' in mode:
+    if mode.startswith('ann'):
         K = 1
     else:
         K = 12
@@ -858,8 +867,11 @@ def as_monthly_anomalies(data):
     """
     Convert `data`, which should be a sequence of monthly values,
     to a sequence of monthly _anomalies_. This is done by
-    computing the mean value for each named calendar month, and
-    subtracting that from each correspoding monthly datum.
+    computing the _climatology_ (mean value for each named
+    calendar month), and
+    subtracting that from each corresponding monthly datum.
+
+    A pair of (monthly_anomalies, climatology) is returned.
     """
 
     import itertools
@@ -885,10 +897,13 @@ def as_monthly_anomalies(data):
 
     anomalies = [sub1(datum, mean)
       for datum, mean in zip(data, itertools.cycle(climatology))]
-    return anomalies
+    return anomalies, climatology
 
 def as_annual_anomalies(data):
-    monthlies = as_monthly_anomalies(data)
+    """
+    A pair of (annual_anomalies, annual_average) is returned.
+    """
+    monthlies, average_monthly_temp = as_monthly_anomalies(data)
     yearly_blocks = grouper(monthlies, 12)
 
     def mean12(data):
@@ -898,7 +913,15 @@ def as_annual_anomalies(data):
         return sum(good_data) / float(len(good_data))
 
     annual_anomalies = [mean12(block) for block in yearly_blocks]
-    return annual_anomalies
+    return annual_anomalies, mean12(average_monthly_temp)
+
+def as_annual_temps(data):
+    anoms, average_temp = as_annual_anomalies(data)
+    def to_temp(d):
+        if d == BAD:
+            return d
+        return d + average_temp
+    return [to_temp(d) for d in anoms]
 
 def select_records(ids, inp, axes, scale=None):
     """`ids` should be a list of 11-digit station identifiers or
@@ -1035,7 +1058,7 @@ def main(argv=None):
         infile = 'input/ghcnm.tavg.qca.dat'
         metafile = None
         opt,arg = getopt.getopt(argv[1:], 'ac:o:d:m:s:t:y',
-          ['axes=', 'caption=', 'colour=', 'offset=', 'title='])
+          ['axes=', 'caption=', 'colour=', 'mode=', 'offset=', 'title='])
         if not arg:
             raise Usage('At least one identifier must be supplied.')
         outfile = arg[0] + '.svg'
@@ -1049,6 +1072,8 @@ def main(argv=None):
                 key['colour'] = v.split(',')
             if k == '-c':
                 update_config(config, v)
+            if k == '--mode':
+                key['mode'] = v
             if k == '--offset':
                 key['offset'] = [float(x) for x in v.split(',')]
             if k == '-a':
@@ -1064,7 +1089,7 @@ def main(argv=None):
             if k == '--title':
                 key['title'] = v
             if k == '-y':
-                key['mode'] = 'annual'
+                key['mode'] = 'annanom'
             if k == '-s':
                 key['scale'] = float(v)
         if outfile == '-':
