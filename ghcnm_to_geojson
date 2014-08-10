@@ -3,6 +3,7 @@
 # Make GeoJSON from GHCN-M v3 .inv file.
 # See http://geojson.org/geojson-spec.html
 
+import codecs
 import json
 import os
 import sys
@@ -40,7 +41,7 @@ def station_metadata(path=None, file=None, format='v3'):
         Convert a field to an int, or if blank, convert to None.
         """
 
-        if s.isspace():
+        if s == '' or s.isspace():
             return None
         return int(s)
 
@@ -109,10 +110,11 @@ def main(argv=None):
     if arg:
         inv = arg[0]
     else:
-        pattern = os.path.expanduser("~/zontem/input/ghcnm*/*.inv")
+        pattern = os.path.expanduser("~/.local/share/data/ghcn/ghcnm*/*.inv")
         invs = glob.glob(pattern)
         inv = sorted(invs)[-1]
-    with open(inv) as inp:
+    # See http://www.evanjones.ca/python-utf8.html for use of codecs.
+    with codecs.open(inv, 'r', 'iso8859-1') as inp:
         to_geojson(inp, sys.stdout)
 
 if __name__ == '__main__':
