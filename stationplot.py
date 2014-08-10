@@ -719,8 +719,10 @@ def get_meta(l, meta):
     full = {}
     for line in meta:
         id = line[:11]
-        if len(line) == 108:
-            # GHCN-M v3
+        # Guess the format, v2 or v3, from the line length.
+        if len(line) in (69, 108):
+            # 108 is true GHCN-M v3.
+            # 69 is ISTI's emulation of GHCN-M v3 format.
             full[id] = dict(
                 name=line[38:70].strip(),
                 lat=float(line[12:20]),
@@ -814,6 +816,9 @@ def from_lines(lines, scale=None):
 
     Invalid data are marked in the input file with -9999 but are
     translated in the data arrays to BAD.
+
+    In the case of ISTI files in GHCN-M v3 format, only TAVG
+    values are extracted.
     """
 
     years = []
@@ -824,9 +829,19 @@ def from_lines(lines, scale=None):
     for line in lines:
         if len(line) == 116:
             # GHCN-M v3
-            year = int(line[11:15])
+            format = 'v3'
         else:
             # GHCN-M v2
+            format = 'v2'
+
+        if 'v3' == format:
+            element = line[15:19]
+            if element != 'TAVG':
+                continue
+
+        if 'v3' == format:
+            year = int(line[11:15])
+        else:
             year = int(line[12:16])
         if prev == year:
             # There is one case where there are multiple lines for the
@@ -838,7 +853,11 @@ def from_lines(lines, scale=None):
                 print "NOTE: repeated record found: Station %s year %s; data are identical" % (line[:12],line[12:16])
                 continue
             # This is unexpected.
-            assert 0, "Two lines specify different data for %s" % line[:16]
+            if 'v2' == format:
+                q = 16
+            else:
+                q = 15
+            assert 0, "Two lines specify different data for %s" % line[:q]
         # Check that the sequence of years increases.
         assert not prev or prev < year
 
