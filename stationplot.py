@@ -542,13 +542,14 @@ def render_legend(out, datadict, minyear):
 
     if config.legend == 'pianola':
         yleg = config.overshoot+config.fontsize
+        yleg += 0.5
         for i,(id12,(data,begin,_)) in enumerate(sorted(datadict.items())):
             length = len(data)//K
             y = yleg + config.fontsize*i
             out.write("  <text alignment-baseline='middle'"
-              " text-anchor='end' x='0' y='%d'>%s</text>\n" %
+              " text-anchor='end' x='0' y='%.1f'>%s</text>\n" %
               (y, id12))
-            out.write("  <g class='record%s'><path d='M%.1f %dl%.1f 0' /></g>\n" %
+            out.write("  <g class='record%s'><path d='M%.1f %.1fl%.1f 0' /></g>\n" %
               (id12, (begin-minyear)*config.xscale, y, length*config.xscale))
         return y
 
