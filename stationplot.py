@@ -904,7 +904,7 @@ def as_monthly_anomalies(data):
         if monthly_data:
             mean = float(sum(monthly_data)) / len(monthly_data)
         else:
-            mean = None
+            mean = BAD
         climatology.append(mean)
 
     def sub1(datum, mean):
