@@ -492,7 +492,7 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
                 for x,y in points]
               return scaled
 
-          for id12,series in datadict.items():
+          for id12,series in sorted(datadict.items()):
               out.write("<g class='record%s'>\n" % id12)
               axis = series[2]
               for segment in curves(series, K):
