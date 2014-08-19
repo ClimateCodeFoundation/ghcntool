@@ -3,6 +3,7 @@
 # stationplot.py
 #
 # David Jones, Clear Climate Code, 2010-03-04
+# David Jones, Climate Code Foundation, 2014-07
 #
 # Require Python 2.6.
 #
