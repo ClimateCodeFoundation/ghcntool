@@ -90,11 +90,15 @@ import sys
 BAD = 9999
 
 class Error(Exception):
-    """Some sort of error."""
+    """
+    Some sort of error.
+    """
 
 class Config:
-    """A record of the configuration parameters used to style the plot.
-    Just a struct really."""
+    """
+    A record of the configuration parameters used to style the plot.
+    Just a struct really.
+    """
 
 config = Config()
 config.debug = False
@@ -118,8 +122,10 @@ config.legend = 'pianola'
 config.buginkscapepdf = False
 
 def derive_config(config):
-    """Some configuration parameters are derived from others if they
-    haven't been set."""
+    """
+    Some configuration parameters are derived from others if they
+    haven't been set.
+    """
 
     def titlesize(c):
         c.titlesize = 1.25*c.fontsize
@@ -160,7 +166,8 @@ def grouper(seq, n):
     return zip(*[iter(seq)]*n)
 
 def curves(series, K):
-    """`series` is a (data,begin,axis) tuple (axis is ignored).
+    """
+    `series` is a (data,begin,axis) tuple (axis is ignored).
     The output is a number of curves, each curves specified by (x,y)
     pairs: Each input datum becomes a y-coordinate and its associated
     x-coordinate is its fractional year.  There is one curve for
@@ -178,7 +185,8 @@ def curves(series, K):
     from itertools import groupby
 
     def enum_frac(data):
-        """Like enumerate, but decorating each datum with a fractional
+        """
+        Like enumerate, but decorating each datum with a fractional
         year coordinate."""
 
         for m,datum in enumerate(data):
@@ -462,11 +470,13 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
             stroke='pink' fill='none' opacity='0.30' />\n""" % xdatabox)
 
           def scale(points, vaxis='y'):
-              """Take a sequence of (year,datum) pairs and scale onto
+              """
+              Take a sequence of (year,datum) pairs and scale onto
               the databox (which has 0,0 at lower left and is 1 to 1
               with SVG pixels)).
 
-              *minyear* and *config.xscale* are used to scale the x value.
+              *minyear* and *config.xscale* are used to scale the
+              x value.
 
 	      There can be multiple vertical axes and multiple
 	      scales.  If *vaxis* is 'y' then *y* values are
@@ -493,12 +503,14 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
 
 
 class Tag(object):
-    """Use in the 'with' statement in order to automatically balance XML
+    """
+    Use in the 'with' statement in order to automatically balance XML
     tags.
     """
 
     def __init__(self, out, name, attr):
-        """Create a context manager (with __enter__ and __exit__
+        """
+        Create a context manager (with __enter__ and __exit__
         methods) that will write out the start and end tags.
         """
 
@@ -520,7 +532,9 @@ class Tag(object):
 
             
 def legend_height(datadict):
-    """Height of the legend.  Seems to include the x-axis label (?)"""
+    """
+    Height of the legend.  Seems to include the x-axis label (?).
+    """
 
     if config.legend == 'pianola':
         return config.fontsize*(len(datadict)+1)
@@ -528,13 +542,16 @@ def legend_height(datadict):
         return config.fontsize
 
 def caption_height(caption):
-    """Height of the caption."""
+    """
+    Height of the caption.
+    """
 
     # :todo: not very general.
     return 1.5 * config.fontsize
 
 def render_legend(out, datadict, minyear):
-    """Write the SVG for the legend onto the stream *out*.  Return the
+    """
+    Write the SVG for the legend onto the stream *out*.  Return the
     lowest y coordinate used.
     """
 
@@ -555,17 +572,21 @@ def render_legend(out, datadict, minyear):
         return y
 
 def render_caption(out, y, caption):
-      """*y* is the y coordinate of the bottom edge of the printed
+      """*
+      y* is the y coordinate of the bottom edge of the printed
       region immediately above the caption (which is normally the
       legend).
       """
+
       # :todo: Abstract; multi-line; XML escape.
       out.write("  <text font-size='%.1f' x='0' y='%.1f'>" %
         (config.fontsize, y+caption_height(caption)))
       out.write(caption + "</text>\n")
 
 def render_vaxis(out, axis, mode, bottom, top, plotwidth):
-    """Either the 'y' (on left) or the 'r' axis (on right)."""
+    """
+    Either the 'y' (on left) or the 'r' axis (on right).
+    """
 
     # In this function, (0,0) is the bottom left of the chart,
     # and +ve y is downwards (same as initial SVG system). We
@@ -660,8 +681,10 @@ def render_vaxis(out, axis, mode, bottom, top, plotwidth):
               u"%s</textPath></text>\n" % label)
 
 def cssidescape(identifier):
-    """Escape an identifier so that it is suitable for use as a CSS
-    identifier.  See http://www.w3.org/TR/CSS2/syndata.html ."""
+    """
+    Escape an identifier so that it is suitable for use as a CSS
+    identifier.  See http://www.w3.org/TR/CSS2/syndata.html.
+    """
 
     import re
 
@@ -680,7 +703,8 @@ def cssidescape(identifier):
     return x0 + x
 
 def window(datadict, timewindow):
-    """Restrict the data series in *datadict* to be between the two
+    """
+    Restrict the data series in *datadict* to be between the two
     times specified in the `timewindow` pair.  A fresh dict is returned.
     """
 
@@ -712,10 +736,11 @@ def window(datadict, timewindow):
     return d
 
 def get_meta(l, meta):
-    """For the 11-digit stations identifiers in `l`, get the metadata
-    extracted from the file `meta`.  A dictionary is returned from maps from
-    station id to an info dictionary.  The info dictionary has keys:
-    name, lat, lon (and maybe more in future).
+    """
+    For the 11-digit stations identifiers in `l`, get the metadata
+    extracted from the file `meta`.  A dictionary is returned that
+    maps from station id to an info dictionary.  The info dictionary
+    has keys: name, lat, lon (and maybe more in future).
     """
 
     full = {}
@@ -745,8 +770,10 @@ def get_meta(l, meta):
     return d
 
 def aspath(l):
-    """Encode a list of data points as an SVG path element.  The element
-    is returned as a string."""
+    """
+    Encode a list of data points as an SVG path element.  The element
+    is returned as a string.
+    """
 
     assert len(l) > 0
 
@@ -770,7 +797,8 @@ def aspath(l):
 # http://code.google.com/p/ccc-gistemp/source/browse/trunk/code/step1.py?r=251
 # :todo: abstract properly.
 def from_years(years):
-    """*years* is a list of year records (lists of temperatures) that
+    """
+    *years* is a list of year records (lists of temperatures) that
     comprise a station's entire record.  The data are converted to a
     linear array (could be a list/tuple/array/sequence, I'm not
     saying), *series*, where series[m] gives the temperature (a
@@ -945,7 +973,8 @@ def as_annual_temps(data):
     return [to_temp(d) for d in anoms]
 
 def select_records(ids, inp, axes, scale=None):
-    """`ids` should be a list of 11-digit station identifiers or
+    """`
+    ids` should be a list of 11-digit station identifiers or
     12-digit record identifiers.
     
     The records from `inp` are extracted
@@ -977,7 +1006,9 @@ def apply_data_offset(data, offset):
     return [off(x) for x in data]
 
 def colour_iter(background=(255,255,255)):
-    """Generate a random sequence of colours, all different."""
+    """
+    Generate a random sequence of colours, all different.
+    """
 
     import random
 
@@ -1014,7 +1045,8 @@ def colour_iter(background=(255,255,255)):
 
 
 def update_config(config, v):
-    """*config* is a configuration object used to store parameters.  *v*
+    """
+    *config* is a configuration object used to store parameters.  *v*
     is an argument string of the form "parm1=value1;parm2=value2;...".
     Each "parm=value" pair sets an attribute of the config object.
     """
@@ -1034,7 +1066,8 @@ def update_config(config, v):
     return config
 
 def parse_topt(v):
-    """Parse the t option which restricts the years to a particular
+    """
+    Parse the t option which restricts the years to a particular
     range.  *v* is a string that is 2 (4-digit) years separated by a
     comma.  A pair of years is returned.
     """
