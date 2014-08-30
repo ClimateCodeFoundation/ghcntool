@@ -81,6 +81,7 @@ The -c option can be used to set various configuration options.  Best to
 examine the source code for details.
 """
 
+import codecs
 import math
 import os
 import sys
@@ -1101,69 +1102,82 @@ class Usage(Exception):
     pass
         
 def main(argv=None):
-    import codecs
-    # http://www.python.org/doc/2.4.4/lib/module-getopt.html
-    import getopt
     import sys
     if argv is None:
         argv = sys.argv
 
-    try:
-        infile = 'input/ghcnm.tavg.qca.dat'
-        metafile = None
-        opt,arg = getopt.getopt(argv[1:], 'ac:o:d:m:s:t:y',
-          ['axes=', 'caption=', 'colour=', 'mode=', 'offset=', 'title='])
-        if not arg:
-            raise Usage('At least one identifier must be supplied.')
-        outfile = arg[0] + '.svg'
-        key = {}
-        for k,v in opt:
-            if k == '--axes':
-                key['axes'] = v
-            if k == '--caption':
-                key['caption'] = v
-            if k == '--colour':
-                key['colour'] = v.split(',')
-            if k == '-c':
-                update_config(config, v)
-            if k == '--mode':
-                key['mode'] = v
-            if k == '--offset':
-                key['offset'] = [float(x) for x in v.split(',')]
-            if k == '-a':
-                key['mode'] = 'anom'
-            if k == '-o':
-                outfile = v
-            if k == '-d':
-                infile = v
-            if k == '-m':
-                metafile = v
-            if k == '-t':
-                key['timewindow'] = parse_topt(v)
-            if k == '--title':
-                key['title'] = v
-            if k == '-y':
-                key['mode'] = 'annanom'
-            if k == '-s':
-                key['scale'] = float(v)
-        if outfile == '-':
-            outfile = sys.stdout
-        else:
-            outfile = open(outfile, 'w')
-        # See http://drj11.wordpress.com/2007/05/14/python-how-is-sysstdoutencoding-chosen/#comment-3770
-        outfile = codecs.getwriter('utf-8')(outfile)
-        if infile == '-':
-            infile = sys.stdin
-        else:
-            infile = open(infile)
-        metafile = open_metafile(metafile, infile)
+    infile = 'input/ghcnm.tavg.qca.dat'
+    metafile = None
+    outfile = None
 
-        derive_config(config)
-        return plot(arg, inp=infile, out=outfile, meta=metafile, **key)
-    except (getopt.GetoptError, Usage), e:
-        sys.stdout.write('%s\n' % str(e))
-        sys.stdout.write(__doc__)
-        return 99
+    arg = argv[1:]
+    key = {}
+    while arg:
+        if not arg[0].startswith('-'):
+            break
+        opt = arg.pop(0)
+        if opt == '--axes':
+            key['axes'] = arg.pop(0)
+        if opt == '--caption':
+            key['caption'] = arg.pop(0)
+        if opt == '--colour':
+            key['colour'] = arg.pop(0).split(',')
+        if opt == '-c':
+            update_config(config, arg.pop(0))
+        if opt == '--mode':
+            key['mode'] = arg.pop(0)
+        if opt == '--offset':
+            v = arg.pop(0)
+            key['offset'] = [float(x) for x in v.split(',')]
+        if opt == '-a':
+            key['mode'] = 'anom'
+        if opt == '-o':
+            outfile = arg.pop(0)
+        if opt == '-d':
+            infile = arg.pop(0)
+        if opt == '-m':
+            metafile = arg.pop(0)
+        if opt == '-t':
+            key['timewindow'] = parse_topt(arg.pop(0))
+        if opt == '--title':
+            key['title'] = arg.pop(0)
+        if opt == '-y':
+            key['mode'] = 'annanom'
+        if opt == '-s':
+            key['scale'] = float(arg.pop(0))
+    if not arg:
+        return usage('At least one identifier must be supplied.')
+    outfile = prepare_outfile(outfile, arg)
+
+    if infile == '-':
+        infile = sys.stdin
+    else:
+        infile = open(infile)
+    metafile = open_metafile(metafile, infile)
+
+    derive_config(config)
+    return plot(arg, inp=infile, out=outfile, meta=metafile, **key)
+
+def prepare_outfile(outfile, arg):
+    """
+    Pick an outfile and return it as a UTF-8 encoded writable
+    stream.
+    """
+
+    if outfile is None:
+        outfile = arg[0] + '.svg'
+    if outfile == '-':
+        outfile = sys.stdout
+    else:
+        outfile = open(outfile, 'w')
+    # See http://drj11.wordpress.com/2007/05/14/python-how-is-sysstdoutencoding-chosen/#comment-3770
+    return codecs.getwriter('utf-8')(outfile)
+
+def usage(m):
+    if m:
+        sys.stdout.write('%s\n' % str(m))
+    sys.stdout.write(__doc__)
+    return 99
 
 if __name__ == '__main__':
     sys.exit(main())
