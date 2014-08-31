@@ -203,10 +203,10 @@ def curves(series, K):
 def get_titles(title, datadict, meta):
     if title:
         return title
-    if not meta:
-        return ''
 
     meta = get_meta(datadict, meta)
+    if not meta:
+        return ''
 
     a = []
     for id11,d in meta.items():
@@ -218,7 +218,7 @@ def get_titles(title, datadict, meta):
 
 def treat_mode(datadict, mode):
     """
-    *datadict* is a dict, as returned by select_records.
+    *datadict* is a dict, as returned by `select_records`.
 
     If `mode` is 'anom' then data are converted to monthly
     anomalies; if `mode` is 'annanom' then data are converted to annual
@@ -238,7 +238,7 @@ def treat_mode(datadict, mode):
         return dict(datadict)
 
     result = {}
-    for id, tupl in datadict.iteritems():
+    for key, tupl in datadict.iteritems():
         data = tupl[0]
         if mode == 'anom':
             data, _ = as_monthly_anomalies(data)
@@ -246,17 +246,17 @@ def treat_mode(datadict, mode):
             data, _ = as_annual_anomalies(data)
         if mode == 'annual':
             data = as_annual_temps(data)
-        result[id] = (data,) + tupl[1:]
+        result[key] = (data,) + tupl[1:]
     return result
 
-def treat_offset(datadict, ids, offset):
+def treat_offset(datadict, stations, offset):
     """
     *offset* can be used to offset each station.
 
     if `offset` is None then there is no effect and a fresh dict
     is returned with unmodified data.
 
-    Otherwise, each station in `ids` has its data biased by adding
+    Otherwise, each station in `stations` has its data biased by adding
     *offset*.
 
     The visual effect is to displace stations upward (if the offset
@@ -268,17 +268,18 @@ def treat_offset(datadict, ids, offset):
     if not offset:
         return result
 
-    for id,off in zip(ids, offset):
-        data = datadict[id][0]
+    for station,off in zip(stations, offset):
+        data = datadict[station][0]
         data = apply_data_offset(data, off)
-        result[id] = (data,) + datadict[id][1:]
+        result[station] = (data,) + datadict[station][1:]
     return result
 
-def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
+def plot(stations, out, meta, colour=[], timewindow=None, mode='temp',
   offset=None, scale=None, caption=None, title=None, axes=None):
     """
-    Read data from `inp` and create a plot of the stations specified
-    in the list `arg`.  Plot is written to `out`.  Metadata (station
+    Create a plot of the stations specified in the list `stations`
+    (each element is a `Station` instance that has a `source`
+    and `id` property).  Plot is written to `out`.  Metadata (station
     name, location) is taken from the `meta` file.
 
     `mode` should be 'temp' to plot temperatures, or 'anom' to plot
@@ -298,8 +299,7 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
     def valid(datum):
         return datum != BAD
 
-    datadict = select_records(arg, inp,
-      axes=axes, scale=scale)
+    datadict = select_records(stations, axes=axes, scale=scale)
 
     if not datadict:
         raise Error('No data found for %s' % (', '.join(arg)))
@@ -310,7 +310,7 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
 
     datadict = treat_mode(datadict, mode)
 
-    datadict = treat_offset(datadict, arg, offset)
+    datadict = treat_offset(datadict, stations, offset)
 
     # Assign number of data items per year.
     global K # :todo: made not global.
@@ -395,15 +395,15 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
 """ % ('display: none', '')[config.debug])
     colours = itertools.chain(colour_list, colour_iter())
     # Assign colours from --colour argument, if and only if there is
-    # exactly one entry in the dict corresponding to the station id.
+    # exactly one entry in datadict corresponding to the station id.
+    # :todo: currently just assumes there is always exactly one
+    # such entry (fixing it will mean working with GHCN-M duplicates).
     colourdict = {}
-    for key,c in zip(arg,colour):
-        keys = [k for k in datadict if k.startswith(key)]
-        if len(keys) == 1:
-            colourdict[keys[0]] = c
-    for id12,c in zip(sorted(datadict), colours):
-        c = colourdict.get(id12, c)
-        cssidescaped = cssidescape('record' + id12)
+    for key,c in zip(stations,colour):
+        colourdict[key] = c
+    for station,c in zip(sorted(datadict, key=lambda s:s.id), colours):
+        c = colourdict.get(station, c)
+        cssidescaped = cssidescape(station.classname())
         out.write("    g.%s { stroke: %s }\n" % (cssidescaped, c))
     out.write("  </style>\n</defs>\n")
 
@@ -493,8 +493,8 @@ def plot(arg, inp, out, meta, colour=[], timewindow=None, mode='temp',
                 for x,y in points]
               return scaled
 
-          for id12,series in sorted(datadict.items()):
-              out.write("<g class='record%s'>\n" % id12)
+          for station,series in sorted(datadict.items()):
+              out.write("<g class='%s'>\n" % station.classname())
               axis = series[2]
               for segment in curves(series, K):
                   out.write(aspath(scale(segment, axis))+'\n')
@@ -562,14 +562,15 @@ def render_legend(out, datadict, minyear):
     if config.legend == 'pianola':
         yleg = config.overshoot+config.fontsize
         yleg += 0.5
-        for i,(id12,(data,begin,_)) in enumerate(sorted(datadict.items())):
+        for i,(station,(data,begin,_)) in enumerate(
+          sorted(datadict.items(), key=lambda p: p[0].id)):
             length = len(data)//K
             y = yleg + config.fontsize*i
             out.write("  <text alignment-baseline='middle'"
               " text-anchor='end' x='0' y='%.1f'>%s</text>\n" %
-              (y, id12))
-            out.write("  <g class='record%s'><path d='M%.1f %.1fl%.1f 0' /></g>\n" %
-              (id12, (begin-minyear)*config.xscale, y, length*config.xscale))
+              (y, station.id))
+            out.write("  <g class='%s'><path d='M%.1f %.1fl%.1f 0' /></g>\n" %
+              (station.classname(), (begin-minyear)*config.xscale, y, length*config.xscale))
         return y
 
 def render_caption(out, y, caption):
@@ -721,7 +722,7 @@ def window(datadict, timewindow):
     assert int(t1) == t1
     assert int(t2) == t2
     d = {}
-    for id12, tup in datadict.items():
+    for station, tup in datadict.items():
         (data, begin) = tup[:2]
         if t2 <= begin:
             continue
@@ -733,16 +734,29 @@ def window(datadict, timewindow):
         if begin < t1:
             data = data[K*(t1-begin):]
             begin = t1
-        d[id12] = (data, begin) + tup[2:]
+        d[station] = (data, begin) + tup[2:]
     return d
 
-def get_meta(l, meta):
+def get_meta(stations, meta):
     """
-    For the 11-digit stations identifiers in `l`, get the metadata
+    For the stations in `stations`, get the metadata
     extracted from the file `meta`.  A dictionary is returned that
-    maps from station id to an info dictionary.  The info dictionary
-    has keys: name, lat, lon (and maybe more in future).
+    maps from 11-digit id to an info dictionary.  The info
+    dictionary has keys: name, lat, lon (and maybe more in future).
     """
+
+    # :todo: it only ends up using one metadata file; really
+    # ought to allow different stations to have different metadata
+    # files.
+
+    sources = [s.source for s in stations]
+    for source in sources:
+        m = open_metafile(meta, source)
+        if m:
+            break
+    meta = m
+    if not meta:
+        return
 
     full = {}
     for line in meta:
@@ -764,8 +778,8 @@ def get_meta(l, meta):
                 lon = float(line[50:57]),
             )
     d = {}
-    l = set(map(lambda x: x[:11], l))
-    for id11 in l:
+    ids = set(s.id[:11] for s in stations)
+    for id11 in ids:
         if id11 in full:
             d[id11] = full[id11]
     return d
@@ -973,29 +987,34 @@ def as_annual_temps(data):
         return d + average_temp
     return [to_temp(d) for d in anoms]
 
-def select_records(ids, inp, axes, scale=None):
-    """`
-    ids` should be a list of 11-digit station identifiers or
-    12-digit record identifiers.
+# :todo: fix for GHCN-M v2. It used to produce multiple results,
+# one for each duplicate of a station.
+def select_records(stations, axes, scale=None):
+    """
+    `stations` should be a list of `Station` instances.
     
-    The records from `inp` are extracted
-    and returned as a dictionary that maps identifiers to
+    The records for these stations are extracted
+    and returned as a dictionary that maps `Station` instance to
     (data,begin,axis) tuple.
     """
 
     # Clear Climate Code, tool directory
     import ghcnm_index
 
-    records = ghcnm_index.File(inp)
+    sources = [s.source for s in stations]
+
+    # dict of indexed record files.
+    index = dict(
+      (source, ghcnm_index.File(source)) for source in sources)
 
     table = {}
     if not axes:
-        axes = 'y' * len(ids)
+        axes = 'y' * len(stations)
 
-    for id,axis in zip(ids, axes):
-        for id12,rows in records.get(id):
+    for station,axis in zip(stations, axes):
+        for id12,rows in index[station.source].get(station.id):
             data,begin = from_lines(rows, scale)
-            table[id12] = (data,begin,axis)
+            table[station] = (data,begin,axis)
 
     return table
 
@@ -1076,21 +1095,20 @@ def parse_topt(v):
     return map(int, v.split(','))
 
 def open_metafile(metafile, inp):
+    """
+    `metafile` and `inp` are both filenames.
+    """
+
     if metafile:
         # Name of metafile supplied. Open it.
         return open(metafile)
 
     # A series of defaults to try...
     names = ['input/v3.inv', 'input/v2.inv']
-    try:
-        inp.name
-    except AttributeError:
-        pass
-    else:
-        # ... including a default based on the name of the input.
-        if inp.name.endswith('.dat'):
-            metaname = inp.name[:-4] + '.inv'
-            names = [metaname] + names
+    # ... including a default based on the name of the input.
+    if inp.endswith('.dat'):
+        metaname = inp[:-4] + '.inv'
+        names = [metaname] + names
     for name in names:
         try:
             metafile = open(name)
@@ -1149,14 +1167,39 @@ def main(argv=None):
         return usage('At least one identifier must be supplied.')
     outfile = prepare_outfile(outfile, arg)
 
+    """
     if infile == '-':
         infile = sys.stdin
     else:
         infile = open(infile)
     metafile = open_metafile(metafile, infile)
+    """
 
     derive_config(config)
-    return plot(arg, inp=infile, out=outfile, meta=metafile, **key)
+
+    stations = []
+    while arg:
+        if arg[0] == '-d':
+            infile = arg[1]
+            arg = arg[2:]
+        else:
+            stations.append(Station(id=arg[0], source=infile))
+            arg = arg[1:]
+
+    return plot(stations, out=outfile, meta=metafile, **key)
+
+class Station:
+    def __init__(self, **k):
+        self.__dict__.update(k)
+
+    def __repr__(self):
+        return "Station(**%r)" % self.__dict__
+
+    def classname(self):
+        """
+        A classname suitable for using as an SVG class attribute.
+        """
+        return 'record-%s-%s' % (self.source, self.id)
 
 def prepare_outfile(outfile, arg):
     """
