@@ -1118,6 +1118,54 @@ def open_metafile(metafile, inp):
 
 class Usage(Exception):
     pass
+
+def opt_one(arg, single=''):
+    """
+    Process a single optional argument from the argument list
+    `arg`. An option is assumed be allowed to have an optional
+    value associated with it, unless it is one of the single
+    chatacter arguments in `single`.
+
+    A pair (opt, v) is returned where `opt` starts with either
+    '-' or '--'.
+    """
+
+    # :todo: Doesn't work for --style arguments that don't have
+    # a value (would need to change interface).
+
+    if arg[0].startswith('--'):
+        if arg[0].find('=') >= 0:
+            i = arg[0].index('=')
+            opt = arg[0][:i]
+            v = arg[0][1+1:]
+            del arg[0]
+            return opt,v
+        else:
+            opt = arg[0]
+            v = arg[1]
+            del arg[:2]
+            return opt,v
+    elif arg[0].startswith('-'):
+        opt = arg[0][:2]
+        if arg[0][1] in single:
+            # We're allowed to specify multiple single arguments
+            # in one go. EG: cmd -abc --extra=fun
+            v = None
+            if len(arg[0]) == 2:
+                del arg[0]
+            else:
+                arg[0] = '-' + arg[0][2:]
+            return opt,v
+        else:
+            # Could have value in same arg, or as extra arg:
+            # -fname -f name.
+            if len(arg[0]) == 2:
+                v = arg[1]
+                del arg[:2]
+            else:
+                v = arg[0][2:]
+                del arg[0]
+            return opt,v
         
 def main(argv=None):
     import sys
@@ -1133,36 +1181,36 @@ def main(argv=None):
     while arg:
         if not arg[0].startswith('-'):
             break
-        opt = arg.pop(0)
+        opt, v = opt_one(arg, single='ay')
         if opt == '--axes':
-            key['axes'] = arg.pop(0)
+            key['axes'] = v
         if opt == '--caption':
-            key['caption'] = arg.pop(0)
+            key['caption'] = v
         if opt == '--colour':
-            key['colour'] = arg.pop(0).split(',')
+            key['colour'] = v.split(',')
         if opt == '-c':
-            update_config(config, arg.pop(0))
+            print "-c", v
+            update_config(config, v)
         if opt == '--mode':
-            key['mode'] = arg.pop(0)
+            key['mode'] = v
         if opt == '--offset':
-            v = arg.pop(0)
             key['offset'] = [float(x) for x in v.split(',')]
         if opt == '-a':
             key['mode'] = 'anom'
         if opt == '-o':
-            outfile = arg.pop(0)
+            outfile = v
         if opt == '-d':
-            infile = arg.pop(0)
+            infile = v
         if opt == '-m':
-            metafile = arg.pop(0)
+            metafile = v
         if opt == '-t':
-            key['timewindow'] = parse_topt(arg.pop(0))
+            key['timewindow'] = parse_topt(v)
         if opt == '--title':
-            key['title'] = arg.pop(0)
+            key['title'] = v
         if opt == '-y':
             key['mode'] = 'annanom'
         if opt == '-s':
-            key['scale'] = float(arg.pop(0))
+            key['scale'] = float(v)
     if not arg:
         return usage('At least one identifier must be supplied.')
     outfile = prepare_outfile(outfile, arg)
