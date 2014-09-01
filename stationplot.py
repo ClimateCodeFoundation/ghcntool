@@ -1189,7 +1189,6 @@ def main(argv=None):
         if opt == '--colour':
             key['colour'] = v.split(',')
         if opt == '-c':
-            print "-c", v
             update_config(config, v)
         if opt == '--mode':
             key['mode'] = v
