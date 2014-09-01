@@ -360,7 +360,7 @@ def plot(stations, out, meta, colour=[], timewindow=None, mode='temp',
         bottom[axis] = math.floor(axismin[axis]*scale-smidgin)
         top[axis] = math.ceil(axismax[axis]*scale+smidgin)
     del axis
-    # The plot is sized according to the y axis (on the left), the r
+    # The plot is sized according to the y axis (on the left); the r
     # axis is subsidiary.
     plotheight = top['y'] - bottom['y']
     legendh = legend_height(datadict)
@@ -393,6 +393,7 @@ def plot(stations, out, meta, colour=[], timewindow=None, mode='temp',
     g#legend path { stroke-width:1; fill:none }
     text { fill: black; font-family: Verdana }
 """ % ('display: none', '')[config.debug])
+
     colours = itertools.chain(colour_list, colour_iter())
     # Assign colours from --colour argument, if and only if there is
     # exactly one entry in datadict corresponding to the station id.
@@ -412,14 +413,15 @@ def plot(stations, out, meta, colour=[], timewindow=None, mode='temp',
       # In this section 0,0 is at top left of chart, and +ve y is down.
       if title:
           with Tag(out, 'g', attr=dict(id='title')):
-              out.write("  <text font-size='%.1f' x='0' y='-4'>%s</text>\n" %
+              out.write(
+                "  <text font-size='%.1f' x='0' y='-4'>%s</text>\n" %
                 (config.titlesize, title))
 
       # Transform so that (0,0) on chart is lower left
       out.write("<g transform='translate(0, %.1f)'>\n" % plotheight)
-      # In this section 0,0 should coincide with bottom left of chart, but
-      # oriented as per SVG default.  +ve y is down.  We are 1-1 with SVG
-      # pixels.
+      # In this section 0,0 should coincide with bottom left of chart,
+      # but oriented as per SVG default.  +ve y is down.
+      # We are 1-1 with SVG pixels.
       # Use yscale and xscale to scale to/and from data coordinates.
 
       # Colour legend.
