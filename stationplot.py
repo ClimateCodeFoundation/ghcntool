@@ -495,7 +495,8 @@ def plot(stations, out, meta, colour=[], timewindow=None, mode='temp',
                 for x,y in points]
               return scaled
 
-          for station,series in sorted(datadict.items()):
+          for station in stations:
+              series = datadict[station]
               out.write("<g class='%s'>\n" % station.classname())
               axis = series[2]
               for segment in curves(series, K):
