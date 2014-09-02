@@ -302,7 +302,7 @@ def plot(stations, out, meta, colour=[], timewindow=None, mode='temp',
     datadict = select_records(stations, axes=axes, scale=scale)
 
     if not datadict:
-        raise Error('No data found for %s' % (', '.join(arg)))
+        raise Error('No data found for %r' % stations)
 
     title = get_titles(title, datadict, meta)
 
