@@ -496,6 +496,9 @@ def plot(stations, out, meta, colour=[], timewindow=None, mode='temp',
               return scaled
 
           for station in stations:
+              if station not in datadict:
+                  # No data, or removed by windowing.
+                  continue
               series = datadict[station]
               out.write("<g class='%s'>\n" % station.classname())
               axis = series[2]
