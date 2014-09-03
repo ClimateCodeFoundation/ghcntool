@@ -163,7 +163,7 @@ def mutate(id, mutants):
         mutants[id] = [new_id]
         return new_id
 
-    letters = 'abcdefghijklmnopqrstuvwxyz'
+    letters = 'abcdefghijklmnopqrstuvwxyz$@_%-^+!:/|~#='
     modified_t = letters[len(mutants[id])]
     new_id = id[:i] + modified_t + id[i+1:]
     mutants[id].append(new_id)
