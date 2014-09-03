@@ -27,5 +27,8 @@ data in each year. It draws charts like this:
 `split_year.py` splits a GHCN-M dataset into those stations
 that still report in a particular year, and those that don't.
 
-`stationplot.py` plots station records as an SVG file.
+`stationplot.py` plots station records as an SVG file. This is a
+real workhorse of CCF investigations. It plots multiple stations
+from different sources on one chart, can plot anomalies or temperature
+at monthly or annual resolution, has scalable axes.
 
