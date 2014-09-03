@@ -217,9 +217,9 @@ def main(argv=None):
     else:
         raise Exception('.dat file must end .dat')
 
-    with open(arg[0]) as dat, open(inv_name) as inv,\
+    with open(arg[0]) as dat, open(inv_name, 'rb') as inv,\
           open(out_dat_name, 'w') as out_dat,\
-          open(out_inv_name, 'w') as out_inv:
+          open(out_inv_name, 'wb') as out_inv:
         scalpel(dat, inv, out_dat, out_inv)
         
 
