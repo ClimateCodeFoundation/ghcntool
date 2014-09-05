@@ -145,7 +145,8 @@ def scalpel(dat, inp_inv, out_dat, out_inv):
     for id, row in sorted(inv.items()):
         out_inv.write(row)
         for child_id in mutants.get(id, []):
-            out_inv.write("{}{}".format(child_id, row[11:]))
+            out_inv.write(bytes(child_id, 'ascii'))
+            out_inv.write(row[11:])
 
 def mutate(id, mutants):
     """
@@ -158,15 +159,17 @@ def mutate(id, mutants):
     # Rightmost position of t.
     i = id.rindex(t)
 
-    if id not in mutants:
+    # the key in the mutants dict must always be in bytes
+    bid = bytes(id, 'ascii')
+    if bid not in mutants:
         new_id = id[:i] + 'a' + id[i+1:]
-        mutants[id] = [new_id]
+        mutants[bid] = [new_id]
         return new_id
 
     letters = 'abcdefghijklmnopqrstuvwxyz$@_%-^+!:/|~#='
-    modified_t = letters[len(mutants[id])]
+    modified_t = letters[len(mutants[bid])]
     new_id = id[:i] + modified_t + id[i+1:]
-    mutants[id].append(new_id)
+    mutants[bid].append(new_id)
     return new_id
 
 def records(inp):
