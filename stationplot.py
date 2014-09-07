@@ -850,11 +850,36 @@ def from_years(years):
         series.extend(data)
     return (series, begin)
 
+def from_months(months):
+    """
+    Convert into linear array and starting year, as per
+    from_years, but handling the case when the input is a series
+    of (year, month, value) triples. (month is 0-based)
+    """
+
+    series = []
+    # First year.
+    begin = None
+    # Previous month counting 0 as January year 0.
+    prev = None
+    for year, month, value in months:
+        if begin is None:
+            begin = year
+            prev = year*12 - 1
+        m = year * 12 + month
+        while prev+1 < m:
+            series.append(BAD)
+            prev += 1
+        prev = m
+        series.append(value)
+    return (series, begin)
+
+
 def from_lines(lines, scale=None):
     """
     *lines* is a list of lines (strings) that comprise a station's
     entire record.  The lines are expected to be an extract from a
-    file in the GHCN-M format (either v2 or v3).
+    file in the GHCN-M format (either v2 or v3), or ISTI format.
 
     The data are converted to a linear array (could be a
     list/tuple/array/sequence, I'm not saying), *series*, where
@@ -868,11 +893,17 @@ def from_lines(lines, scale=None):
     Invalid data are marked in the input file with -9999 but are
     translated in the data arrays to BAD.
 
-    In the case of ISTI files in GHCN-M v3 format, only TAVG
-    values are extracted.
+    In the case of ISTI files (in either GHCN-M v3 format or
+    native ISTI format), only TAVG values are extracted.
     """
 
+    # :todo: it is a bit ugly that this function handles both
+    # year-per-row (GHCN) and month-per-row (ISTI).
+
+    # Used for GHCN-M (v2 and v3) format.
     years = []
+    # Used for ISTI format.
+    months = []
     # Year from previous line.
     prev = None
     # The previous line itself.
@@ -881,9 +912,21 @@ def from_lines(lines, scale=None):
         if len(line) == 116:
             # GHCN-M v3
             format = 'v3'
+        elif len(line) == 133:
+            # ISTI
+            format = 'isti-v1'
         else:
             # GHCN-M v2
             format = 'v2'
+
+        if 'isti-v1' == format:
+            field = line.split()
+            date = field[4]
+            month = int(date[4:6]) - 1
+            year = int(date[:4])
+            value = int(field[7]) * 0.01
+            months.append((year, month, value))
+            continue
 
         if 'v3' == format:
             element = line[15:19]
@@ -931,7 +974,14 @@ def from_lines(lines, scale=None):
                 datum *= scale or default_scale
             temps.append(datum)
         years.append((year, temps))
-    return from_years(years)
+
+    assert months or years
+    assert not (months and years)
+
+    if years:
+        return from_years(years)
+    if months:
+        return from_months(months)
 
 def as_monthly_anomalies(data):
     """
@@ -1004,14 +1054,10 @@ def select_records(stations, axes, scale=None):
     (data,begin,axis) tuple.
     """
 
-    # Clear Climate Code, tool directory
-    import ghcnm_index
-
     sources = [s.source for s in stations]
 
     # dict of indexed record files.
-    index = dict(
-      (source, ghcnm_index.File(source)) for source in sources)
+    index = dict((source, fast_access(source)) for source in sources)
 
     table = {}
     if not axes:
@@ -1023,6 +1069,30 @@ def select_records(stations, axes, scale=None):
             table[station] = (data,begin,axis)
 
     return table
+
+class ISTI_data:
+    def __init__(self, source):
+        self.source = source
+
+    def get(self, id):
+        yield (id, open(self.source).readlines())
+
+def fast_access(source):
+    """
+    Arrange "fast access" to the file of station records `source`.
+    The protocol is that this function returns an object with a
+    .get() method, which when called with a station id returns
+    a sequence of (id, rows) pairs.
+    """
+
+    # ghcntool directory
+    import ghcnm_index
+
+    if source.endswith("_monthly_stage2"):
+        # An ISTI record, which is not optimised.
+        return ISTI_data(source)
+    else:
+        return ghcnm_index.File(source)
 
 def apply_data_offset(data, offset):
     def off(x):
