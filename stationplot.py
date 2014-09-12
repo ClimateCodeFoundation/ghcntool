@@ -582,8 +582,10 @@ def render_pianola(out, datadict, minyear):
         out.write("  <text alignment-baseline='middle'"
           " text-anchor='end' x='0' y='%.1f'>%s</text>\n" %
           (y, station.id))
-        out.write("  <g class='%s'><path d='M%.1f %.1fl%.1f 0' /></g>\n" %
-          (station.classname(), (begin-minyear)*config.xscale, y, length*config.xscale))
+        classname = station.classname()
+        with Tag(out, 'g', {'class': classname}):
+            out.write("<path d='M%.1f %.1fl%.1f 0' />" %
+              ((begin-minyear)*config.xscale, y, length*config.xscale))
     return y
 
 def render_caption(out, y, caption):
