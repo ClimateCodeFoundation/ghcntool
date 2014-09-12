@@ -571,6 +571,8 @@ def render_pianola(out, datadict, minyear):
     Render the pianola legend.
     """
 
+    import itertools
+
     # Includes range indicators for each series.
     # Start of the top line of text for the legend.
     yleg = config.overshoot+config.fontsize
@@ -584,8 +586,15 @@ def render_pianola(out, datadict, minyear):
           (y, station.id))
         classname = station.classname()
         with Tag(out, 'g', {'class': classname}):
-            out.write("<path d='M%.1f %.1fl%.1f 0' />" %
-              ((begin-minyear)*config.xscale, y, length*config.xscale))
+            for is_bad, block in itertools.groupby(
+              enumerate(data), lambda x: x[1] == BAD):
+                if is_bad:
+                    continue
+                l = list(block)
+                length = float(len(l)) / K
+                b = float(l[0][0]) / K
+                out.write("<path d='M%.1f %.1fl%.1f 0' />" %
+                  ((begin-minyear+b)*config.xscale, y, length*config.xscale))
     return y
 
 def render_caption(out, y, caption):
