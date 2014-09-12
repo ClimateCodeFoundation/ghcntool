@@ -562,22 +562,29 @@ def render_legend(out, datadict, minyear):
     lowest y coordinate used.
     """
 
-    # Includes range indicators for each series.
-    # Start of the top line of text for the legend.
 
     if config.legend == 'pianola':
-        yleg = config.overshoot+config.fontsize
-        yleg += 0.5
-        for i,(station,(data,begin,_)) in enumerate(
-          sorted(datadict.items(), key=lambda p: p[0].id)):
-            length = len(data)//K
-            y = yleg + config.fontsize*i
-            out.write("  <text alignment-baseline='middle'"
-              " text-anchor='end' x='0' y='%.1f'>%s</text>\n" %
-              (y, station.id))
-            out.write("  <g class='%s'><path d='M%.1f %.1fl%.1f 0' /></g>\n" %
-              (station.classname(), (begin-minyear)*config.xscale, y, length*config.xscale))
-        return y
+        return render_pianola(out, datadict, minyear)
+
+def render_pianola(out, datadict, minyear):
+    """
+    Render the pianola legend.
+    """
+
+    # Includes range indicators for each series.
+    # Start of the top line of text for the legend.
+    yleg = config.overshoot+config.fontsize
+    yleg += 0.5
+    for i,(station,(data,begin,_)) in enumerate(
+      sorted(datadict.items(), key=lambda p: p[0].id)):
+        length = len(data)//K
+        y = yleg + config.fontsize*i
+        out.write("  <text alignment-baseline='middle'"
+          " text-anchor='end' x='0' y='%.1f'>%s</text>\n" %
+          (y, station.id))
+        out.write("  <g class='%s'><path d='M%.1f %.1fl%.1f 0' /></g>\n" %
+          (station.classname(), (begin-minyear)*config.xscale, y, length*config.xscale))
+    return y
 
 def render_caption(out, y, caption):
       """*
