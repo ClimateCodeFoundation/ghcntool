@@ -59,17 +59,24 @@ def xyz(lat, lon):
 
 def main(argv=None):
     import codecs
+    import getopt
     import glob
     import sys
 
     if argv is None:
         argv = sys.argv
 
-    arg = argv[1:]
+    inv = None
+    opt, arg = getopt.getopt(argv[1:], '', ['inv='])
+    for o,v in opt:
+        if o == '--inv':
+            inv = v
 
-    pattern = os.path.expanduser("~/.local/share/data/ghcn/ghcnm*/*.inv")
-    invs = glob.glob(pattern)
-    inv = sorted(invs)[-1]
+    if inv is None:
+        pattern = os.path.expanduser("~/.local/share/data/ghcn/ghcnm*/*.inv")
+        invs = glob.glob(pattern)
+        inv = sorted(invs)[-1]
+        sys.stderr.write("Using --inv {}\n".format(inv))
     # See http://www.evanjones.ca/python-utf8.html for use of codecs.
     with codecs.open(inv, 'r', 'iso8859-1') as inp:
         nearest(arg[0], inp)
